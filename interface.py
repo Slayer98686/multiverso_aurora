@@ -81,21 +81,24 @@ if prompt := st.chat_input("Envie uma mensagem para a inteligência..."):
         with st.chat_message("assistant"):
             placeholder_resposta = st.empty()
             try:
-                # Prepara o contexto incluindo o histórico para a IA ter memória
-                conteudos_para_envio = []
-                # Passa a instrução do sistema no formato correto
+                # 1. Configura as instruções de sistema (a persona)
                 config_modelo = {"system_instruction": instrucao_sistema}
                 
-                # Alimenta o histórico na chamada
-                for m in st.session_state.historico_chat:
-                    conteudos_para_envio.append(m["content"])
+                # 2. Organiza o histórico no formato exato que o Gemini entende (Modo Chat)
+                historico_formatado = []
+                for m in st.session_state.historico_chat[:-1]:  # Pega o passado
+                    funcao = "user" if m["role"] == "user" else "model"
+                    historico_formatado.append({"role": funcao, "parts": [m["content"]]})
                 
-                # Faz a chamada para o modelo flash estável do Gemini
-                resposta = client.models.generate_content(
+                # 3. Inicia um chat com o histórico estruturado
+                chat = client.chats.create(
                     model='gemini-2.5-flash',
-                    contents=conteudos_para_envio,
+                    history=historico_formatado,
                     config=config_modelo
                 )
+                
+                # 4. Envia a mensagem atual do usuário dentro do contexto do chat
+                resposta = chat.send_message(prompt)
                 
                 texto_resposta = resposta.text
                 placeholder_resposta.markdown(texto_resposta)
