@@ -78,26 +78,33 @@ if prompt := st.chat_input("Envie uma mensagem para a inteligência..."):
     st.session_state.historico_chat.append({"role": "user", "content": prompt})
 
     if client:
-        with st.chat_message("assistant"):
+with st.chat_message("assistant"):
             placeholder_resposta = st.empty()
             try:
-                # 1. Configura as instruções de sistema (a persona)
-                config_modelo = {"system_instruction": instrucao_sistema}
+                # 1. Importa a configuração correta da nova biblioteca do Gemini
+                from google.genai import types
                 
-                # 2. Organiza o histórico no formato exato que o Gemini entende (Modo Chat)
+                # 2. Configura a persona no formato oficial exigido pela API
+                config_modelo = types.GenerateContentConfig(
+                    system_instruction=instrucao_sistema
+                )
+                
+                # 3. Organiza o histórico no formato exato que o Gemini entende (Modo Chat)
                 historico_formatado = []
                 for m in st.session_state.historico_chat[:-1]:  # Pega o passado
                     funcao = "user" if m["role"] == "user" else "model"
-                    historico_formatado.append({"role": funcao, "parts": [m["content"]]})
+                    historico_formatado.append(
+                        types.Content(role=funcao, parts=[types.Part.from_text(text=m["content"])])
+                    )
                 
-                # 3. Inicia um chat com o histórico estruturado
+                # 4. Inicia um chat com o histórico estruturado e a configuração de persona
                 chat = client.chats.create(
                     model='gemini-2.5-flash',
                     history=historico_formatado,
                     config=config_modelo
                 )
                 
-                # 4. Envia a mensagem atual do usuário dentro do contexto do chat
+                # 5. Envia a mensagem atual do usuário dentro do contexto do chat
                 resposta = chat.send_message(prompt)
                 
                 texto_resposta = resposta.text
