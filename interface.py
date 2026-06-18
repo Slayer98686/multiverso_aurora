@@ -78,7 +78,7 @@ if prompt := st.chat_input("Envie uma mensagem para a inteligência..."):
     st.session_state.historico_chat.append({"role": "user", "content": prompt})
 
     if client:
-with st.chat_message("assistant"):
+        with st.chat_message("assistant"):
             placeholder_resposta = st.empty()
             try:
                 # 1. Importa a configuração correta da nova biblioteca do Gemini
